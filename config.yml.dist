@@ -1,0 +1,13 @@
+#example for config in root/config.yml
+
+enjoyscms/hybridauth:
+  allow-auto-register: false
+  providers:
+    Twitter:
+      enabled: true
+      info:
+        name: Google
+        icon: fa fa-google
+      keys:
+        key: public-key
+        secret: secret-key

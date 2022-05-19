@@ -1,0 +1,32 @@
+{
+    "name": "enjoyscms/hybridauth",
+    "description": "Social login (oauth) module for EnjoysCMS",
+    "type": "enjoyscms-module",
+    "require": {
+        "php": ">=8.0",
+        "enjoyscms/core": "^4.0",
+        "enjoyscms/admin": "^4.0",
+        "hybridauth/hybridauth": "^3.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "EnjoysCMS\\Module\\Hybridauth\\": "src/"
+        }
+    },
+    "extra": {
+        "module-name": "Hybridauth"
+    },
+    "scripts": {
+        "post-install-cmd": "EnjoysCMS\\Module\\Hybridauth\\Composer::assetsInstall",
+        "post-update-cmd": "EnjoysCMS\\Module\\Hybridauth\\Composer::assetsInstall"
+    },
+    "require-dev": {
+        "vimeo/psalm": "^4.20"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "oomphinc/composer-installers-extender": true
+        }
+    }
+}

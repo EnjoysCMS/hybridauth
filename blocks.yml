@@ -1,0 +1,7 @@
+EnjoysCMS\Module\Hybridauth\Blocks\HybridauthBlock:
+  name: Hybridauth
+  options:
+    template:
+      value: "@m/hybridauth/blocks/hybridauth.twig"
+      name: Путь до шаблона
+      description: Обязательно

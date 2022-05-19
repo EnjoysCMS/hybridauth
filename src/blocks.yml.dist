@@ -1,0 +1,7 @@
+App\Hybridauth\HybridauthBlock:
+  name: Hybridauth
+  options:
+    template:
+      value: "@app/blocks/hybridauth.twig"
+      name: Путь до шаблона
+      description: Обязательно
