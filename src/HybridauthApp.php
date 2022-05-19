@@ -111,7 +111,7 @@ final class HybridauthApp
         $user = new User();
         $user->setLogin(uniqid('user'));
         $user->setPasswordHash('');
-        $user->setName($data['name'] ?? uniqid($data->getProvider()));
+        $user->setName($data->getUserProfile()->displayName ?? uniqid($data->getProvider()));
         $user->setEmail($data->getUserProfile()->email);
         $user->setGroups($userGroup);
         $this->em->persist($user);
