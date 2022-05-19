@@ -9,6 +9,7 @@ namespace EnjoysCMS\Module\Hybridauth\Controller;
 use Enjoys\ServerRequestWrapper;
 use Enjoys\Session\Session;
 use EnjoysCMS\Core\BaseController;
+use EnjoysCMS\Module\Hybridauth\Data;
 use EnjoysCMS\Module\Hybridauth\HybridauthApp;
 use Hybridauth\Exception\InvalidArgumentException;
 use Hybridauth\Exception\UnexpectedValueException;
@@ -55,16 +56,16 @@ final class Controller extends BaseController
 
         $userProfile = $adapter->getUserProfile();
         $accessToken = $adapter->getAccessToken();
-        $data = [
-            'provider' => $provider,
-            'redirectUrl' => $redirectUrl,
-            'token' => $accessToken,
-            'identifier' => $userProfile->identifier,
-            'email' => $userProfile->email,
-            'name' => $userProfile->displayName,
-        ];
 
-        $this->hybridauthApp->auth($data);
+        $this->hybridauthApp->auth(
+            new Data([
+                'provider' => $provider,
+                'redirectUrl' => $redirectUrl,
+                'identifier' => $userProfile->identifier,
+                'token' => $accessToken,
+                'userProfile' => $userProfile,
+            ])
+        );
     }
 
     /**
@@ -116,12 +117,14 @@ final class Controller extends BaseController
     )]
     public function errorPage(): ResponseInterface
     {
-       $reason = $this->request->getAttributesData('reason');
+        $reason = $this->request->getAttributesData('reason');
         // todo
-       return $this->responseText(match ($reason){
-           'disable' => 'Запрещена регистрация через соцсети, разрешен только вход с ранее привязанными аккаунтами',
-           default => throw new InvalidArgumentException('Unknown error')
-       });
+        return $this->responseText(
+            match ($reason) {
+                'disable' => 'Запрещена регистрация через соцсети, разрешен только вход с ранее привязанными аккаунтами',
+                default => throw new InvalidArgumentException('Unknown error')
+            }
+        );
     }
 
 }

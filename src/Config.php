@@ -7,11 +7,12 @@ namespace EnjoysCMS\Module\Hybridauth;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
+use EnjoysCMS\Core\Components\Modules\ModuleConfig;
 
 final class Config
 {
 
-    private \EnjoysCMS\Core\Components\Modules\ModuleConfig $moduleConfig;
+    private ModuleConfig $moduleConfig;
 
     /**
      * @throws DependencyException
@@ -20,7 +21,7 @@ final class Config
     public function __construct(Container $container)
     {
         $this->moduleConfig = $container->make(
-            \EnjoysCMS\Core\Components\Modules\ModuleConfig::class,
+            ModuleConfig::class,
             ['moduleName' => 'enjoyscms/hybridauth']
         );
     }
@@ -30,7 +31,7 @@ final class Config
         return $this->moduleConfig->getAll();
     }
 
-    public function getModuleConfig(): \EnjoysCMS\Core\Components\Modules\ModuleConfig
+    public function getModuleConfig(): ModuleConfig
     {
         return $this->moduleConfig;
     }

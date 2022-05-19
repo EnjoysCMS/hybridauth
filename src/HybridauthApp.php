@@ -42,7 +42,6 @@ final class HybridauthApp
         );
 
         $this->hybridauth = new Hybridauth($this->config);
-
     }
 
 
@@ -52,27 +51,16 @@ final class HybridauthApp
     }
 
     /**
-     * @throws OptimisticLockException
-     * @throws \Throwable
-     * @throws \Doctrine\ORM\ORMException
-     * @throws ORMException
      * @throws Exception
+     * @throws InvalidArgumentException
+     * @throws OptimisticLockException
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Throwable
      */
-    public function auth(array $data)
+    public function auth(Data $data): void
     {
-        if (!array_key_exists('provider', $data)) {
-            throw new InvalidArgumentException('The parameter `provider` not set');
-        }
-
-        if (!array_key_exists('identifier', $data)) {
-            throw new InvalidArgumentException('The parameter `identifier` not set');
-        }
-
-        if (!array_key_exists('redirectUrl', $data)) {
-            throw new InvalidArgumentException('The parameter `redirectUrl` not set');
-        }
-
         try {
+
             $user = $this->getUser($data);
 
             if ($user === null) {
@@ -92,19 +80,19 @@ final class HybridauthApp
                 'authenticate' => 'hybridauth'
             ]);
 
-            Redirect::http(urldecode($data['redirectUrl']));
+            Redirect::http(urldecode($data->getRedirectUrl()));
         } catch (\Throwable $e) {
             $this->authorize->logout();
             throw $e;
         }
     }
 
-    private function getUser(array $data): ?User
+    private function getUser(Data $data): ?User
     {
         /** @var Entities\Hybridauth|null $hybridauthData */
         $hybridauthData = $this->em->getRepository(Entities\Hybridauth::class)->findOneBy([
-            'identifier' => $data['identifier'],
-            'provider' => $data['provider'],
+            'identifier' => $data->getIdentifier(),
+            'provider' => $data->getProvider(),
         ]);
         if ($hybridauthData === null) {
             return null;
@@ -112,22 +100,26 @@ final class HybridauthApp
         return $hybridauthData->getUser();
     }
 
-    private function registerUser(array $data): User
+    /**
+     * @throws OptimisticLockException
+     * @throws ORMException
+     */
+    private function registerUser(Data $data): User
     {
         $userGroup = $this->em->getRepository(Group::class)->findOneBy(['name' => 'Users']);
 
         $user = new User();
         $user->setLogin(uniqid('user'));
         $user->setPasswordHash('');
-        $user->setName($data['name'] ?? uniqid($data['provider']));
-        $user->setEmail($data['email']);
+        $user->setName($data['name'] ?? uniqid($data->getProvider()));
+        $user->setEmail($data->getUserProfile()->email);
         $user->setGroups($userGroup);
         $this->em->persist($user);
 
         $hybridauthData = new Entities\Hybridauth();
-        $hybridauthData->setIdentifier($data['identifier']);
+        $hybridauthData->setIdentifier($data->getIdentifier());
         $hybridauthData->setUser($user);
-        $hybridauthData->setProvider($data['provider']);
+        $hybridauthData->setProvider($data->getProvider());
         $this->em->persist($hybridauthData);
 
         $this->em->flush();
