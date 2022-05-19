@@ -5,3 +5,10 @@ EnjoysCMS\Module\Hybridauth\Blocks\HybridauthBlock:
       value: "@m/hybridauth/blocks/hybridauth.twig"
       name: Путь до шаблона
       description: Обязательно
+EnjoysCMS\Module\Hybridauth\Blocks\AttachBlock:
+  name: Hybridauth Attach for Profile
+  options:
+    template:
+      value: "../modules/hybridauth/template/blocks/attach_block.twig"
+      name: Путь до шаблона
+      description: Обязательно
