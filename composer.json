@@ -16,10 +16,6 @@
     "extra": {
         "module-name": "Hybridauth"
     },
-    "scripts": {
-        "post-install-cmd": "EnjoysCMS\\Module\\Hybridauth\\Composer::assetsInstall",
-        "post-update-cmd": "EnjoysCMS\\Module\\Hybridauth\\Composer::assetsInstall"
-    },
     "require-dev": {
         "vimeo/psalm": "^4.20"
     },
