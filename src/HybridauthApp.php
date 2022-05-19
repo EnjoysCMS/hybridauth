@@ -11,6 +11,7 @@ use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Enjoys\Cookie\Exception;
 use EnjoysCMS\Core\Components\Auth\Authorize;
+use EnjoysCMS\Core\Components\Auth\Identity;
 use EnjoysCMS\Core\Components\Helpers\Redirect;
 use EnjoysCMS\Core\Entities\Group;
 use EnjoysCMS\Core\Entities\User;
@@ -31,7 +32,8 @@ final class HybridauthApp
         Config $config,
         private UrlGeneratorInterface $urlGenerator,
         private Authorize $authorize,
-        private EntityManager $em
+        private EntityManager $em,
+        private Identity $identity
     ) {
         $this->config = $config->getConfig();
 
@@ -87,6 +89,33 @@ final class HybridauthApp
         }
     }
 
+    public function attach(Data $data): void
+    {
+        try {
+            /** @var Entities\Hybridauth|null $hybridauthData */
+            $hybridauthData = $this->em->getRepository(Entities\Hybridauth::class)->findOneBy([
+                'identifier' => $data->getIdentifier(),
+                'provider' => $data->getProvider(),
+            ]);
+
+            if ($hybridauthData === null){
+                $hybridauthData = new Entities\Hybridauth();
+                $hybridauthData->setIdentifier($data->getIdentifier());
+                $hybridauthData->setProvider($data->getProvider());
+            }
+
+            $hybridauthData->setUser($this->identity->getUser());
+
+            $this->em->persist($hybridauthData);
+            $this->em->flush();
+
+            Redirect::http(urldecode($data->getRedirectUrl()));
+        } catch (\Throwable $e) {
+           // $this->authorize->logout();
+            throw $e;
+        }
+    }
+
     private function getUser(Data $data): ?User
     {
         /** @var Entities\Hybridauth|null $hybridauthData */
@@ -94,10 +123,8 @@ final class HybridauthApp
             'identifier' => $data->getIdentifier(),
             'provider' => $data->getProvider(),
         ]);
-        if ($hybridauthData === null) {
-            return null;
-        }
-        return $hybridauthData->getUser();
+
+        return $hybridauthData?->getUser();
     }
 
     /**

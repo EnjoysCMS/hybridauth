@@ -4,7 +4,7 @@
 
 
         {% set info = hybridauth.getProviderConfig(provider).info %}
-        <a href="{{ path('hybridauth/authenticate', {'provider': provider, 'redirect': currentUrl|url_encode }) }}" class="h4 d-block">
+        <a href="{{ path('hybridauth/authenticate', {'provider': provider, 'method': 'attach'}) }}" class="h4 d-block">
             {% if provider in attachedProviders|map(i => i.getProvider)%}
                 [Attached]
             {% endif %}

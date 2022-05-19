@@ -44,6 +44,7 @@ final class Controller extends BaseController
         $storage = $this->session->get('hybridauth', []);
         $redirectUrl = ($storage['redirect'] ?? null);
         $provider = ($storage['provider'] ?? null);
+        $method = ($storage['method'] ?? 'auth');
 
         if ($provider === null) {
             throw new InvalidArgumentException('This page is either invalid or has already been consumed');
@@ -57,15 +58,15 @@ final class Controller extends BaseController
         $userProfile = $adapter->getUserProfile();
         $accessToken = $adapter->getAccessToken();
 
-        $this->hybridauthApp->auth(
-            new Data([
-                'provider' => $provider,
-                'redirectUrl' => $redirectUrl,
-                'identifier' => $userProfile->identifier,
-                'token' => $accessToken,
-                'userProfile' => $userProfile,
-            ])
-        );
+        $data = new Data([
+            'provider' => $provider,
+            'redirectUrl' => $redirectUrl,
+            'identifier' => $userProfile->identifier,
+            'token' => $accessToken,
+            'userProfile' => $userProfile,
+        ]);
+
+        $this->hybridauthApp->$method($data);
     }
 
     /**
@@ -95,6 +96,7 @@ final class Controller extends BaseController
         $this->session->set([
             'hybridauth' => [
                 'provider' => $provider,
+                'method' => $this->request->getQueryData('method', 'auth'),
                 'redirect' => $this->request->getQueryData(
                     'redirect',
                     $urlGenerator->generate(
@@ -107,6 +109,7 @@ final class Controller extends BaseController
 
         $this->hybridauthApp->getHybridauth()->authenticate($provider);
     }
+
 
     #[Route(
         path: 'oauth/error/{reason}',
