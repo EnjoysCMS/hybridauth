@@ -66,7 +66,6 @@ final class HybridauthApp
     public function auth(Data $data): void
     {
         try {
-
             $user = $this->getUser($data);
 
             if ($user === null) {
@@ -102,11 +101,20 @@ final class HybridauthApp
                 'provider' => $data->getProvider(),
             ]);
 
-            if ($hybridauthData === null){
+            if ($hybridauthData === null) {
                 $hybridauthData = new Entities\Hybridauth();
                 $hybridauthData->setIdentifier($data->getIdentifier());
                 $hybridauthData->setProvider($data->getProvider());
             }
+            $hybridauthData->setAvatar($data->getUserProfile()->photoURL);
+            $hybridauthData->setProfileUrl($data->getUserProfile()->profileURL);
+
+            $hybridauthData->setDisplayName(
+                $data->getUserProfile()->displayName
+                ?? $data->getUserProfile()->emailVerified
+                ?? $data->getUserProfile()->email
+                ?? $data->getUserProfile()->identifier
+            );
 
             $hybridauthData->setUser($this->identity->getUser());
 
@@ -115,7 +123,7 @@ final class HybridauthApp
 
             Redirect::http(urldecode($data->getRedirectUrl()));
         } catch (\Throwable $e) {
-           // $this->authorize->logout();
+            // $this->authorize->logout();
             throw $e;
         }
     }
@@ -149,8 +157,18 @@ final class HybridauthApp
 
         $hybridauthData = new Entities\Hybridauth();
         $hybridauthData->setIdentifier($data->getIdentifier());
-        $hybridauthData->setUser($user);
         $hybridauthData->setProvider($data->getProvider());
+        $hybridauthData->setAvatar($data->getUserProfile()->photoURL);
+        $hybridauthData->setProfileUrl($data->getUserProfile()->profileURL);
+        $hybridauthData->setDisplayName(
+            $data->getUserProfile()->displayName
+            ?? $data->getUserProfile()->emailVerified
+            ?? $data->getUserProfile()->email
+            ?? $data->getUserProfile()->identifier
+        );
+
+        $hybridauthData->setUser($user);
+
         $this->em->persist($hybridauthData);
 
         $this->em->flush();

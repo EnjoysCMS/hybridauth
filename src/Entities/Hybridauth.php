@@ -32,6 +32,22 @@ class Hybridauth
     private string $provider;
 
     /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private ?string $avatar = null;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private ?string $displayName = null;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private ?string $profileUrl = null;
+
+
+    /**
      * @ORM\ManyToOne(targetEntity="EnjoysCMS\Core\Entities\User")
      * @ORM\JoinColumn(onDelete="CASCADE")
      */
@@ -65,5 +81,40 @@ class Hybridauth
     public function setUser(User $user): void
     {
         $this->user = $user;
+    }
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function getAvatar(): ?string
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(?string $avatar): void
+    {
+        $this->avatar = $avatar;
+    }
+
+    public function getDisplayName(): ?string
+    {
+        return $this->displayName;
+    }
+
+    public function setDisplayName(?string $displayName): void
+    {
+        $this->displayName = $displayName;
+    }
+
+    public function getProfileUrl(): ?string
+    {
+        return $this->profileUrl;
+    }
+
+    public function setProfileUrl(?string $profileUrl): void
+    {
+        $this->profileUrl = $profileUrl;
     }
 }

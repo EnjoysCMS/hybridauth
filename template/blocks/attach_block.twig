@@ -1,12 +1,46 @@
 <div>
-    {% for provider in hybridauth.getProviders %}
-        {% set info = hybridauth.getProviderConfig(provider).info %}
-        <a href="{{ path('hybridauth/authenticate', {'provider': provider, 'method': 'attach', 'redirect': currentUrl|url_encode}) }}" class="h4 d-block">
-            {% if provider in attachedProviders|map(i => i.getProvider)%}
-                [Attached]
-            {% endif %}
-            <i class="{{ info.icon }}" title="Войти через {{ info.name ??  provider }}"></i> {{ info.name ??  provider }}
-        </a>
-    {% endfor %}
+    {% if attachedProviders %}
+        <h4>Подключенные аккаунты</h4>
+        <ul>
+            {% for attached in attachedProviders %}
+                {% set info = hybridauth.getProviderConfig(attached.getProvider).info %}
+                <li>
+                    <span class="h1">
+                       {% if info.icon %}
+                           <i class="{{ info.icon }}"></i>
+                       {% else %}
+                           {{ info.name ??  attached.getProvider }}
+                       {% endif %}
+
+                        {% if attached.getAvatar %}
+                            <img src="{{ attached.getAvatar }}" style="max-height: 48px; max-width: 48px;" alt="{{ attached.getDisplayName }}">
+                        {% endif %}
+                    </span>
+                    {% if attached.getProfileUrl %}
+                        <a href="{{ attached.getProfileUrl }}" class="text-primary">
+                            <i class="fa fa-external-link"></i>
+                        </a>
+                    {% endif %}
+
+                    {{ attached.getDisplayName }} ({{ attached.getIdentifier }})
+
+                    <a href="{{ attached.getId }}" class="text-primary">Отключить</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <h4 class="mt-5">Доступные к подключению аккаунты</h4>
+    <ul>
+        {% for provider in hybridauth.getProviders %}
+            {% set info = hybridauth.getProviderConfig(provider).info %}
+            <li>
+                <a class="text-primary"
+                   href="{{ path('hybridauth/authenticate', {'provider': provider, 'method': 'attach', 'redirect': currentUrl|url_encode}) }}">
+                    {{ info.name ??  provider }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
 </div>
 
