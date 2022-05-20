@@ -24,7 +24,7 @@
 
                     {{ attached.getDisplayName }} ({{ attached.getIdentifier }})
 
-                    <a href="{{ attached.getId }}" class="text-primary">Отключить</a>
+                    <a href="{{ path('hybridauth/detach', {'id': attached.getId}) }}" class="text-primary">Отключить</a>
                 </li>
             {% endfor %}
         </ul>

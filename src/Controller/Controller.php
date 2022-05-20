@@ -6,10 +6,17 @@ declare(strict_types=1);
 namespace EnjoysCMS\Module\Hybridauth\Controller;
 
 
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\OptimisticLockException;
 use Enjoys\ServerRequestWrapper;
 use Enjoys\Session\Session;
 use EnjoysCMS\Core\BaseController;
+use EnjoysCMS\Core\Components\Auth\Identity;
+use EnjoysCMS\Core\Components\Helpers\Error;
+use EnjoysCMS\Core\Components\Helpers\Redirect;
 use EnjoysCMS\Module\Hybridauth\Data;
+use EnjoysCMS\Module\Hybridauth\Entities\Hybridauth;
 use EnjoysCMS\Module\Hybridauth\HybridauthApp;
 use Hybridauth\Exception\InvalidArgumentException;
 use Hybridauth\Exception\UnexpectedValueException;
@@ -91,7 +98,7 @@ final class Controller extends BaseController
         if (!in_array($this->request->getQueryData('method', 'auth'), HybridauthApp::ALLOW_METHODS, true)) {
             throw new InvalidArgumentException('Method parameter not allowed');
         }
-        
+
         if (empty($provider)) {
             throw new InvalidArgumentException('The provider not select');
         }
@@ -116,6 +123,38 @@ final class Controller extends BaseController
         ]);
 
         $this->hybridauthApp->getHybridauth()->authenticate($provider);
+    }
+
+    /**
+     * @throws ORMException
+     * @throws OptimisticLockException
+     */
+    #[Route(
+        path: 'oauth/detach',
+        name: 'hybridauth/detach',
+        options: [
+            'acl' => false
+        ]
+    )]
+    public function detach(Identity $identity, EntityManager $em, UrlGeneratorInterface $urlGenerator): void
+    {
+        if (!$identity->getUser()->isUser()) {
+            Error::code(403);
+        }
+
+        $hybridauthData = $em->getRepository(Hybridauth::class)->findOneBy([
+            'id' => $this->request->getQueryData('id'),
+            'user' => $identity->getUser()
+        ]);
+
+        if ($hybridauthData === null) {
+            Error::code(404);
+        }
+
+        $em->remove($hybridauthData);
+        $em->flush();
+
+        Redirect::http($urlGenerator->generate('system/profile'));
     }
 
 
