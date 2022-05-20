@@ -2,7 +2,7 @@ EnjoysCMS\Module\Hybridauth\Blocks\HybridauthBlock:
   name: Hybridauth
   options:
     template:
-      value: "@m/hybridauth/blocks/hybridauth.twig"
+      value: "../modules/hybridauth/template/blocks/hybridauth.twig"
       name: Путь до шаблона
       description: Обязательно
 EnjoysCMS\Module\Hybridauth\Blocks\AttachBlock:

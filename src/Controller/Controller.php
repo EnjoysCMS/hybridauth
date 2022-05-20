@@ -50,6 +50,10 @@ final class Controller extends BaseController
             throw new InvalidArgumentException('This page is either invalid or has already been consumed');
         }
 
+        if (!in_array($method, HybridauthApp::ALLOW_METHODS, true)) {
+            throw new InvalidArgumentException('Method parameter not allowed');
+        }
+
         $adapter = $this->hybridauthApp->getHybridauth()->getAdapter($provider);
         $adapter->authenticate();
 
@@ -84,6 +88,10 @@ final class Controller extends BaseController
     {
         $provider = $this->request->getQueryData('provider');
 
+        if (!in_array($this->request->getQueryData('method', 'auth'), HybridauthApp::ALLOW_METHODS, true)) {
+            throw new InvalidArgumentException('Method parameter not allowed');
+        }
+        
         if (empty($provider)) {
             throw new InvalidArgumentException('The provider not select');
         }

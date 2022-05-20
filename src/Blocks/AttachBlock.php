@@ -10,6 +10,7 @@ use DI\DependencyException;
 use DI\FactoryInterface;
 use DI\NotFoundException;
 use Doctrine\ORM\EntityManager;
+use Enjoys\ServerRequestWrapper;
 use EnjoysCMS\Core\Components\Auth\Identity;
 use EnjoysCMS\Core\Components\Blocks\AbstractBlock;
 use EnjoysCMS\Core\Entities\Block as Entity;
@@ -68,18 +69,17 @@ final class AttachBlock extends AbstractBlock
            'user' => $identity->getUser()
         ]);
 
+        /** @var ServerRequestWrapper $request */
+        $request  = $this->container->get(ServerRequestWrapper::class);
 
-    //    dd(in_array('Yandex', $attachedProviders));
-//        dd(in_array('Yandex', array_map(function ($i){
-//            return $i->getProvider();
-//        }, $attachedProviders)));
 
         return $this->twig->render(
             $this->templatePath,
             [
                 'blockOptions' => $this->getOptions(),
                 'attachedProviders' => $attachedProviders,
-                'hybridauth' => $this->container->get(HybridauthApp::class)->getHybridauth()
+                'currentUrl' => $request->getRequest()->getUri()->__toString(),
+                'hybridauth' => $this->container->get(HybridauthApp::class)->getHybridauth(),
             ]
         );
     }

@@ -22,6 +22,10 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class HybridauthApp
 {
+    public const ALLOW_METHODS = [
+        'auth',
+        'attach'
+    ];
     private Hybridauth $hybridauth;
     private array $config;
 
