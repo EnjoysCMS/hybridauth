@@ -18,9 +18,9 @@ use EnjoysCMS\Core\Components\Helpers\Redirect;
 use EnjoysCMS\Module\Hybridauth\Data;
 use EnjoysCMS\Module\Hybridauth\Entities\Hybridauth;
 use EnjoysCMS\Module\Hybridauth\HybridauthApp;
+use HttpSoft\Message\Uri;
 use Hybridauth\Exception\InvalidArgumentException;
 use Hybridauth\Exception\UnexpectedValueException;
-use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -28,6 +28,7 @@ final class Controller extends BaseController
 {
     public function __construct(
         private HybridauthApp $hybridauthApp,
+        private UrlGeneratorInterface $urlGenerator,
         private ServerRequestWrapper $request,
         private Session $session
     ) {
@@ -46,38 +47,51 @@ final class Controller extends BaseController
             'acl' => false
         ]
     )]
-    public function callbackPage(): void
+    public function callbackPage()
     {
-        $storage = $this->session->get('hybridauth', []);
-        $redirectUrl = ($storage['redirect'] ?? null);
-        $provider = ($storage['provider'] ?? null);
-        $method = ($storage['method'] ?? 'auth');
+        try {
+            $storage = $this->session->get('hybridauth', []);
+            $redirectUrl = ($storage['redirect'] ?? null);
+            $provider = ($storage['provider'] ?? null);
+            $method = ($storage['method'] ?? 'auth');
 
-        if ($provider === null) {
-            throw new InvalidArgumentException('This page is either invalid or has already been consumed');
+            if ($provider === null) {
+                throw new InvalidArgumentException('This page is either invalid or has already been consumed');
+            }
+
+            if (!in_array($method, HybridauthApp::ALLOW_METHODS, true)) {
+                throw new InvalidArgumentException('Method parameter not allowed');
+            }
+
+            $adapter = $this->hybridauthApp->getHybridauth()->getAdapter($provider);
+            $adapter->authenticate();
+
+            $this->session->delete('hybridauth');
+
+            $userProfile = $adapter->getUserProfile();
+            $accessToken = $adapter->getAccessToken();
+
+            $data = new Data([
+                'provider' => $provider,
+                'redirectUrl' => $redirectUrl,
+                'identifier' => $userProfile->identifier,
+                'token' => $accessToken,
+                'userProfile' => $userProfile,
+            ]);
+
+            $this->hybridauthApp->$method($data);
+        } catch (\Throwable $e) {
+            $redirectUrl ??= $this->urlGenerator->generate('system/index');
+            $url = new Uri(urldecode($redirectUrl));
+            $url = $url->withQuery(
+                sprintf(
+                    '%s=%s',
+                    HybridauthApp::ERROR_QUERY,
+                    base64_encode($e->getMessage())
+                )
+            );
+            Redirect::http($url->__toString());
         }
-
-        if (!in_array($method, HybridauthApp::ALLOW_METHODS, true)) {
-            throw new InvalidArgumentException('Method parameter not allowed');
-        }
-
-        $adapter = $this->hybridauthApp->getHybridauth()->getAdapter($provider);
-        $adapter->authenticate();
-
-        $this->session->delete('hybridauth');
-
-        $userProfile = $adapter->getUserProfile();
-        $accessToken = $adapter->getAccessToken();
-
-        $data = new Data([
-            'provider' => $provider,
-            'redirectUrl' => $redirectUrl,
-            'identifier' => $userProfile->identifier,
-            'token' => $accessToken,
-            'userProfile' => $userProfile,
-        ]);
-
-        $this->hybridauthApp->$method($data);
     }
 
     /**
@@ -91,38 +105,51 @@ final class Controller extends BaseController
             'acl' => false
         ]
     )]
-    public function authenticate(UrlGeneratorInterface $urlGenerator): void
+    public function authenticate(): void
     {
         $provider = $this->request->getQueryData('provider');
+        $redirectUrl = $this->request->getQueryData(
+            'redirect',
+            $this->urlGenerator->generate(
+                'system/index',
+                referenceType: UrlGeneratorInterface::ABSOLUTE_URL
+            )
+        );
 
-        if (!in_array($this->request->getQueryData('method', 'auth'), HybridauthApp::ALLOW_METHODS, true)) {
-            throw new InvalidArgumentException('Method parameter not allowed');
-        }
+        try {
+            if (!in_array($this->request->getQueryData('method', 'auth'), HybridauthApp::ALLOW_METHODS, true)) {
+                throw new InvalidArgumentException('Method parameter not allowed');
+            }
 
-        if (empty($provider)) {
-            throw new InvalidArgumentException('The provider not select');
-        }
+            if (empty($provider)) {
+                throw new InvalidArgumentException('The provider not select');
+            }
 
-        if (!in_array($provider, $this->hybridauthApp->getHybridauth()->getProviders(), true)) {
-            $this->session->delete('hybridauth');
-            throw new InvalidArgumentException(sprintf('[Error] The provider `%s` - not supported', $provider));
-        }
+            if (!in_array($provider, $this->hybridauthApp->getHybridauth()->getProviders(), true)) {
+                $this->session->delete('hybridauth');
+                throw new InvalidArgumentException(sprintf('[Error] The provider `%s` - not supported', $provider));
+            }
 
-        $this->session->set([
-            'hybridauth' => [
-                'provider' => $provider,
-                'method' => $this->request->getQueryData('method', 'auth'),
-                'redirect' => $this->request->getQueryData(
-                    'redirect',
-                    $urlGenerator->generate(
-                        'system/index',
-                        referenceType: UrlGeneratorInterface::ABSOLUTE_URL
-                    )
+            $this->session->set([
+                'hybridauth' => [
+                    'provider' => $provider,
+                    'method' => $this->request->getQueryData('method', 'auth'),
+                    'redirect' => $redirectUrl
+                ]
+            ]);
+
+            $this->hybridauthApp->getHybridauth()->authenticate($provider);
+        } catch (\Throwable $e) {
+            $url = new Uri(urldecode($redirectUrl));
+            $url = $url->withQuery(
+                sprintf(
+                    '%s=%s',
+                    HybridauthApp::ERROR_QUERY,
+                    base64_encode($e->getMessage())
                 )
-            ]
-        ]);
-
-        $this->hybridauthApp->getHybridauth()->authenticate($provider);
+            );
+            Redirect::http($url->__toString());
+        }
     }
 
     /**
@@ -155,26 +182,6 @@ final class Controller extends BaseController
         $em->flush();
 
         Redirect::http($urlGenerator->generate('system/profile'));
-    }
-
-
-    #[Route(
-        path: 'oauth/error/{reason}',
-        name: 'hybridauth/error-page',
-        options: [
-            'acl' => false
-        ]
-    )]
-    public function errorPage(): ResponseInterface
-    {
-        $reason = $this->request->getAttributesData('reason');
-        // todo
-        return $this->responseText(
-            match ($reason) {
-                'disable' => 'Запрещена регистрация через соцсети, разрешен только вход с ранее привязанными аккаунтами',
-                default => throw new InvalidArgumentException('Unknown error')
-            }
-        );
     }
 
 }

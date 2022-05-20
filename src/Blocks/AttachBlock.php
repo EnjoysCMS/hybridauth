@@ -19,6 +19,7 @@ use EnjoysCMS\Module\Hybridauth\HybridauthApp;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\UriInterface;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -66,19 +67,34 @@ final class AttachBlock extends AbstractBlock
         }
 
         $attachedProviders = $this->container->get(EntityManager::class)->getRepository(Hybridauth::class)->findBy([
-           'user' => $identity->getUser()
+            'user' => $identity->getUser()
         ]);
 
         /** @var ServerRequestWrapper $request */
-        $request  = $this->container->get(ServerRequestWrapper::class);
+        $request = $this->container->get(ServerRequestWrapper::class);
 
+        $removeQuery = function (UriInterface $uri, string|array $removedQuery) {
+            parse_str($uri->getQuery(), $query);
+            return http_build_query(
+                array_filter((array)$query, function ($k) use ($removedQuery) {
+                    return !in_array($k, (array)$removedQuery);
+                }, ARRAY_FILTER_USE_KEY)
+            );
+        };
 
         return $this->twig->render(
             $this->templatePath,
             [
                 'blockOptions' => $this->getOptions(),
                 'attachedProviders' => $attachedProviders,
-                'currentUrl' => $request->getRequest()->getUri()->__toString(),
+                'currentUrl' => $request->getRequest()
+                    ->getUri()
+                    ->withQuery(
+                        $removeQuery(
+                            $request->getRequest()->getUri(),
+                            [HybridauthApp::ERROR_QUERY]
+                        )
+                    )->__toString(),
                 'hybridauth' => $this->container->get(HybridauthApp::class)->getHybridauth(),
             ]
         );

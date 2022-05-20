@@ -14,6 +14,7 @@ use EnjoysCMS\Module\Hybridauth\HybridauthApp;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\UriInterface;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -50,14 +51,30 @@ final class HybridauthBlock extends AbstractBlock
     public function view(): string
     {
         /** @var ServerRequestWrapper $request */
-        $request  = $this->container->get(ServerRequestWrapper::class);
+        $request = $this->container->get(ServerRequestWrapper::class);
+
+        $removeQuery = function (UriInterface $uri, string|array $removedQuery) {
+            parse_str($uri->getQuery(), $query);
+            return http_build_query(
+                array_filter((array)$query, function ($k) use ($removedQuery) {
+                    return !in_array($k, (array)$removedQuery);
+                }, ARRAY_FILTER_USE_KEY)
+            );
+        };
 
         return $this->twig->render(
             $this->templatePath,
             [
                 'blockOptions' => $this->getOptions(),
                 'hybridauth' => $this->container->get(HybridauthApp::class)->getHybridauth(),
-                'currentUrl' => $request->getRequest()->getUri()->__toString()
+                'currentUrl' => $request->getRequest()
+                    ->getUri()
+                    ->withQuery(
+                        $removeQuery(
+                            $request->getRequest()->getUri(),
+                            [HybridauthApp::ERROR_QUERY]
+                        )
+                    )->__toString()
             ]
         );
     }

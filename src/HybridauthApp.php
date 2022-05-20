@@ -26,6 +26,9 @@ final class HybridauthApp
         'auth',
         'attach'
     ];
+
+    public const ERROR_QUERY = 'oauth-error';
+
     private Hybridauth $hybridauth;
     private array $config;
 
@@ -70,13 +73,7 @@ final class HybridauthApp
 
             if ($user === null) {
                 if (false === ($this->config['allow-auto-register'] ?? true)) {
-                    Redirect::http(
-                        $this->urlGenerator->generate(
-                            'hybridauth/error-page',
-                            ['reason' => 'disable'],
-                            UrlGeneratorInterface::ABSOLUTE_URL
-                        )
-                    );
+                    throw new \Exception('New register not allowed via another sites');
                 }
                 $user = $this->registerUser($data);
             }
@@ -123,7 +120,6 @@ final class HybridauthApp
 
             Redirect::http(urldecode($data->getRedirectUrl()));
         } catch (\Throwable $e) {
-            // $this->authorize->logout();
             throw $e;
         }
     }

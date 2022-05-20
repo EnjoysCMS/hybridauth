@@ -1,4 +1,10 @@
 <div>
+    {% if _request.queryData('oauth-error') %}
+        <div class="alert alert-warning">
+            {{ _request.queryData('oauth-error')|base64_decode }}
+        </div>
+    {% endif %}
+
     {% if attachedProviders %}
         <h4>Подключенные аккаунты</h4>
         <ul>
