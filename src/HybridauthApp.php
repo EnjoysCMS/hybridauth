@@ -42,7 +42,7 @@ final class HybridauthApp
         private EntityManager $em,
         private Identity $identity
     ) {
-        $this->config = $config->getConfig();
+        $this->config = $config->getModuleConfig()->asArray();
 
         $this->config['callback'] = $this->urlGenerator->generate(
             'hybridauth/callback',
