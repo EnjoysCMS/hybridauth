@@ -9,7 +9,6 @@ namespace EnjoysCMS\Module\Hybridauth\Controller;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
-use Enjoys\ServerRequestWrapper;
 use Enjoys\Session\Session;
 use EnjoysCMS\Core\BaseController;
 use EnjoysCMS\Core\Components\Auth\Identity;
@@ -21,6 +20,7 @@ use EnjoysCMS\Module\Hybridauth\HybridauthApp;
 use HttpSoft\Message\Uri;
 use Hybridauth\Exception\InvalidArgumentException;
 use Hybridauth\Exception\UnexpectedValueException;
+use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -29,7 +29,7 @@ final class Controller extends BaseController
     public function __construct(
         private HybridauthApp $hybridauthApp,
         private UrlGeneratorInterface $urlGenerator,
-        private ServerRequestWrapper $request,
+        private ServerRequestInterface $request,
         private Session $session
     ) {
         parent::__construct();
@@ -107,17 +107,14 @@ final class Controller extends BaseController
     )]
     public function authenticate(): void
     {
-        $provider = $this->request->getQueryData('provider');
-        $redirectUrl = $this->request->getQueryData(
-            'redirect',
-            $this->urlGenerator->generate(
-                'system/index',
-                referenceType: UrlGeneratorInterface::ABSOLUTE_URL
-            )
+        $provider = $this->request->getQueryParams()['provider'];
+        $redirectUrl = $this->request->getQueryParams()['redirect'] ??  $this->urlGenerator->generate(
+            'system/index',
+            referenceType: UrlGeneratorInterface::ABSOLUTE_URL
         );
 
         try {
-            if (!in_array($this->request->getQueryData('method', 'auth'), HybridauthApp::ALLOW_METHODS, true)) {
+            if (!in_array($this->request->getQueryParams()['method'] ?? 'auth', HybridauthApp::ALLOW_METHODS, true)) {
                 throw new InvalidArgumentException('Method parameter not allowed');
             }
 
@@ -133,7 +130,7 @@ final class Controller extends BaseController
             $this->session->set([
                 'hybridauth' => [
                     'provider' => $provider,
-                    'method' => $this->request->getQueryData('method', 'auth'),
+                    'method' => $this->request->getQueryParams()['method'] ?? 'auth',
                     'redirect' => $redirectUrl
                 ]
             ]);
@@ -170,7 +167,7 @@ final class Controller extends BaseController
         }
 
         $hybridauthData = $em->getRepository(Hybridauth::class)->findOneBy([
-            'id' => $this->request->getQueryData('id'),
+            'id' => $this->request->getQueryParams()['id'] ?? null,
             'user' => $identity->getUser()
         ]);
 

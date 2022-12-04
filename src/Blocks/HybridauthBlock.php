@@ -7,13 +7,13 @@ namespace EnjoysCMS\Module\Hybridauth\Blocks;
 
 
 use DI\FactoryInterface;
-use Enjoys\ServerRequestWrapper;
 use EnjoysCMS\Core\Components\Blocks\AbstractBlock;
 use EnjoysCMS\Core\Entities\Block as Entity;
 use EnjoysCMS\Module\Hybridauth\HybridauthApp;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 use Twig\Environment;
 use Twig\Error\LoaderError;
@@ -50,8 +50,8 @@ final class HybridauthBlock extends AbstractBlock
      */
     public function view(): string
     {
-        /** @var ServerRequestWrapper $request */
-        $request = $this->container->get(ServerRequestWrapper::class);
+        /** @var ServerRequestInterface $request */
+        $request = $this->container->get(ServerRequestInterface::class);
 
         $removeQuery = function (UriInterface $uri, string|array $removedQuery) {
             parse_str($uri->getQuery(), $query);
@@ -67,11 +67,11 @@ final class HybridauthBlock extends AbstractBlock
             [
                 'blockOptions' => $this->getOptions(),
                 'hybridauth' => $this->container->get(HybridauthApp::class)->getHybridauth(),
-                'currentUrl' => $request->getRequest()
+                'currentUrl' => $request
                     ->getUri()
                     ->withQuery(
                         $removeQuery(
-                            $request->getRequest()->getUri(),
+                            $request->getUri(),
                             [HybridauthApp::ERROR_QUERY]
                         )
                     )->__toString()

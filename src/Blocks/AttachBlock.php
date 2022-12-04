@@ -10,7 +10,6 @@ use DI\DependencyException;
 use DI\FactoryInterface;
 use DI\NotFoundException;
 use Doctrine\ORM\EntityManager;
-use Enjoys\ServerRequestWrapper;
 use EnjoysCMS\Core\Components\Auth\Identity;
 use EnjoysCMS\Core\Components\Blocks\AbstractBlock;
 use EnjoysCMS\Core\Entities\Block as Entity;
@@ -19,6 +18,7 @@ use EnjoysCMS\Module\Hybridauth\HybridauthApp;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 use Twig\Environment;
 use Twig\Error\LoaderError;
@@ -70,8 +70,8 @@ final class AttachBlock extends AbstractBlock
             'user' => $identity->getUser()
         ]);
 
-        /** @var ServerRequestWrapper $request */
-        $request = $this->container->get(ServerRequestWrapper::class);
+        /** @var ServerRequestInterface $request */
+        $request = $this->container->get(ServerRequestInterface::class);
 
         $removeQuery = function (UriInterface $uri, string|array $removedQuery) {
             parse_str($uri->getQuery(), $query);
@@ -87,11 +87,11 @@ final class AttachBlock extends AbstractBlock
             [
                 'blockOptions' => $this->getOptions(),
                 'attachedProviders' => $attachedProviders,
-                'currentUrl' => $request->getRequest()
+                'currentUrl' => $request
                     ->getUri()
                     ->withQuery(
                         $removeQuery(
-                            $request->getRequest()->getUri(),
+                            $request->getUri(),
                             [HybridauthApp::ERROR_QUERY]
                         )
                     )->__toString(),
