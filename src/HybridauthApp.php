@@ -46,7 +46,7 @@ final class HybridauthApp
         $this->config = $config->all();
 
         $this->config['callback'] = $this->urlGenerator->generate(
-            'hybridauth/callback',
+            'hybridauth_callback',
             [],
             UrlGeneratorInterface::ABSOLUTE_URL
         );
