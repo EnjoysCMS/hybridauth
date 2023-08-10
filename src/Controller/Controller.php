@@ -47,7 +47,7 @@ final class Controller
         path: '/callback',
         name: 'callback'
     )]
-    public function callbackPage()
+    public function callback()
     {
         try {
             $storage = $this->session->get('hybridauth', []);
@@ -65,8 +65,6 @@ final class Controller
 
             $adapter = $this->hybridauthApp->getHybridauth()->getAdapter($provider);
             $adapter->authenticate();
-
-            $this->session->delete('hybridauth');
 
             $userProfile = $adapter->getUserProfile();
             $accessToken = $adapter->getAccessToken();
@@ -100,6 +98,8 @@ final class Controller
             );
 
             return $this->redirect->toUrl($url->__toString());
+        } finally {
+            $this->session->delete('hybridauth');
         }
     }
 
