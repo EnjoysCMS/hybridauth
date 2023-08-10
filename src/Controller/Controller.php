@@ -7,45 +7,43 @@ namespace EnjoysCMS\Module\Hybridauth\Controller;
 
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Enjoys\Session\Session;
-use EnjoysCMS\Core\BaseController;
-use EnjoysCMS\Core\Components\Auth\Identity;
-use EnjoysCMS\Core\Components\Helpers\Error;
-use EnjoysCMS\Core\Components\Helpers\Redirect;
+use EnjoysCMS\Core\Auth\Identity;
+use EnjoysCMS\Core\Exception\ForbiddenException;
+use EnjoysCMS\Core\Exception\NotFoundException;
+use EnjoysCMS\Core\Http\Response\RedirectInterface;
+use EnjoysCMS\Core\Routing\Annotation\Route;
 use EnjoysCMS\Module\Hybridauth\Data;
 use EnjoysCMS\Module\Hybridauth\Entities\Hybridauth;
 use EnjoysCMS\Module\Hybridauth\HybridauthApp;
 use HttpSoft\Message\Uri;
+use Hybridauth\Adapter\AdapterInterface;
 use Hybridauth\Exception\InvalidArgumentException;
-use Hybridauth\Exception\UnexpectedValueException;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-final class Controller extends BaseController
+#[Route('oauth', 'hybridauth_', needAuthorized: false)]
+final class Controller
 {
     public function __construct(
-        private HybridauthApp $hybridauthApp,
-        private UrlGeneratorInterface $urlGenerator,
-        private ServerRequestInterface $request,
-        private Session $session
+        private readonly HybridauthApp $hybridauthApp,
+        private readonly ServerRequestInterface $request,
+        private readonly Session $session,
+        private readonly RedirectInterface $redirect
     ) {
-        parent::__construct();
         $this->hybridauthApp->getHybridauth()->disconnectAllAdapters();
     }
 
     /**
-     * @throws UnexpectedValueException
-     * @throws InvalidArgumentException
+     * @return never|ResponseInterface|void
      */
     #[Route(
-        path: 'oauth/callback',
-        name: 'hybridauth/callback',
-        options: [
-            'acl' => false
-        ]
+        path: '/callback',
+        name: 'callback'
     )]
     public function callbackPage()
     {
@@ -79,9 +77,17 @@ final class Controller extends BaseController
                 'userProfile' => $userProfile,
             ]);
 
-            $this->hybridauthApp->$method($data);
+            return $this->hybridauthApp->$method($data);
         } catch (\Throwable $e) {
-            $redirectUrl ??= $this->urlGenerator->generate('system/index');
+            $redirectUrl ??= 'system/index';
+
+            if ($redirectUrl === 'system/index') {
+                return $this->redirect->toRoute(
+                    $redirectUrl,
+                    [HybridauthApp::ERROR_QUERY => base64_encode($e->getMessage())]
+                );
+            }
+
             $url = new Uri(urldecode($redirectUrl));
             $url = $url->withQuery(
                 sprintf(
@@ -90,25 +96,21 @@ final class Controller extends BaseController
                     base64_encode($e->getMessage())
                 )
             );
-            Redirect::http($url->__toString());
+
+            return $this->redirect->toUrl($url->__toString());
         }
     }
 
+
     /**
-     * @throws UnexpectedValueException
-     * @throws InvalidArgumentException
+     * @param UrlGeneratorInterface $urlGenerator
+     * @return AdapterInterface|ResponseInterface|void
      */
-    #[Route(
-        path: 'oauth',
-        name: 'hybridauth/authenticate',
-        options: [
-            'acl' => false
-        ]
-    )]
-    public function authenticate(): void
+    #[Route(name: 'authenticate')]
+    public function authenticate(UrlGeneratorInterface $urlGenerator)
     {
         $provider = $this->request->getQueryParams()['provider'];
-        $redirectUrl = $this->request->getQueryParams()['redirect'] ??  $this->urlGenerator->generate(
+        $redirectUrl = $this->request->getQueryParams()['redirect'] ?? $urlGenerator->generate(
             'system/index',
             referenceType: UrlGeneratorInterface::ABSOLUTE_URL
         );
@@ -135,7 +137,7 @@ final class Controller extends BaseController
                 ]
             ]);
 
-            $this->hybridauthApp->getHybridauth()->authenticate($provider);
+            return $this->hybridauthApp->getHybridauth()->authenticate($provider);
         } catch (\Throwable $e) {
             $url = new Uri(urldecode($redirectUrl));
             $url = $url->withQuery(
@@ -145,25 +147,25 @@ final class Controller extends BaseController
                     base64_encode($e->getMessage())
                 )
             );
-            Redirect::http($url->__toString());
+            return $this->redirect->toUrl($url->__toString());
         }
     }
 
     /**
+     * @throws ForbiddenException
+     * @throws NotFoundException
+     * @throws NotSupported
      * @throws ORMException
      * @throws OptimisticLockException
      */
     #[Route(
-        path: 'oauth/detach',
-        name: 'hybridauth/detach',
-        options: [
-            'acl' => false
-        ]
+        path: '/detach',
+        name: 'detach'
     )]
-    public function detach(Identity $identity, EntityManager $em, UrlGeneratorInterface $urlGenerator): void
+    public function detach(Identity $identity, EntityManager $em): ResponseInterface
     {
         if (!$identity->getUser()->isUser()) {
-            Error::code(403);
+            throw new ForbiddenException();
         }
 
         $hybridauthData = $em->getRepository(Hybridauth::class)->findOneBy([
@@ -172,13 +174,13 @@ final class Controller extends BaseController
         ]);
 
         if ($hybridauthData === null) {
-            Error::code(404);
+            throw new NotFoundException();
         }
 
         $em->remove($hybridauthData);
         $em->flush();
 
-        Redirect::http($urlGenerator->generate('system/profile'));
+        return $this->redirect->toRoute('system/profile');
     }
 
 }
