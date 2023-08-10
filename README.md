@@ -4,7 +4,7 @@ Module for EnjoysCMS for social sign. Based on [hybridauth/hybridauth](https://g
 [Supported providers](https://hybridauth.github.io/providers.html)
 
 ## Install
-`composer require enjoyscms/hybridauth:dev-master`
+`composer require enjoyscms/hybridauth:6.x-dev`
 
 ## Configure
 

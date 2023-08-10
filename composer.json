@@ -3,9 +3,9 @@
     "description": "Social login (oauth) module for EnjoysCMS",
     "type": "enjoyscms-module",
     "require": {
-        "php": ">=8.0",
-        "enjoyscms/core": "^4.0",
-        "enjoyscms/admin": "^4.0",
+        "php": "^8.1",
+        "enjoyscms/core": "^6.0@dev",
+        "enjoyscms/admin": "^6.0@dev",
         "hybridauth/hybridauth": "^3.8"
     },
     "autoload": {
@@ -17,7 +17,7 @@
         "module-name": "Hybridauth"
     },
     "require-dev": {
-        "vimeo/psalm": "^4.20"
+        "vimeo/psalm": "^4.0 | ^5.0"
     },
     "config": {
         "allow-plugins": {
