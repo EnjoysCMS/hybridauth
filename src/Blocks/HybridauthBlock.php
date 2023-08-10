@@ -20,7 +20,7 @@ use Twig\Error\SyntaxError;
     name: 'Hybridauth',
     options: [
         'template' => [
-            'value' => '/modules/hybridauth/template/blocks/hybridauth.twig',
+            'value' => '../modules/hybridauth/template/blocks/hybridauth.twig',
             'name' => 'Путь до шаблона',
             'description' => 'Обязательно'
         ]

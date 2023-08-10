@@ -13,7 +13,7 @@
                 <li>
                     <span class="h1">
                        {% if info.icon %}
-                           <i class="{{ info.icon }}"></i>
+                           <i class="{{ info.icon }}"></i> {{ info.name ??  attached.getProvider }}
                        {% else %}
                            {{ info.name ??  attached.getProvider }}
                        {% endif %}
@@ -30,7 +30,7 @@
 
                     {{ attached.getDisplayName }} ({{ attached.getIdentifier }})
 
-                    <a href="{{ path('hybridauth/detach', {'id': attached.getId}) }}" class="text-primary">Отключить</a>
+                    <a href="{{ path('hybridauth_detach', {'id': attached.getId}) }}" class="text-primary">Отключить</a>
                 </li>
             {% endfor %}
         </ul>
@@ -42,7 +42,7 @@
             {% set info = hybridauth.getProviderConfig(provider).info %}
             <li>
                 <a class="text-primary"
-                   href="{{ path('hybridauth/authenticate', {'provider': provider, 'method': 'attach', 'redirect': currentUrl|url_encode}) }}">
+                   href="{{ path('hybridauth_authenticate', {'provider': provider, 'method': 'attach', 'redirect': currentUrl|url_encode}) }}">
                     {{ info.name ??  provider }}
                 </a>
             </li>

@@ -1,10 +1,10 @@
 <div class="d-inline">
     {% for provider in hybridauth.getProviders %}
         {% set info = hybridauth.getProviderConfig(provider).info %}
-        <a href="{{ path('hybridauth/authenticate', {'provider': provider, 'redirect': currentUrl|url_encode }) }}"
+        <a href="{{ path('hybridauth_authenticate', {'provider': provider, 'redirect': currentUrl|url_encode }) }}"
            class="h4">
             {% if info.icon %}
-                <i class="{{ info.icon }}" title="Войти через {{ info.name ??  provider }}"></i>
+                <i class="{{ info.icon }}" title="Войти через {{ info.name ??  provider }}"></i> {{ info.name ??  provider }}
             {% else %}
                 {{ info.name ??  provider }}
             {% endif %}

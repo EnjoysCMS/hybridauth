@@ -25,7 +25,7 @@ use Twig\Error\SyntaxError;
     name: 'Hybridauth Attach for Profile',
     options: [
         'template' => [
-            'value' => '/modules/hybridauth/template/blocks/attach_block.twig',
+            'value' => '../modules/hybridauth/template/blocks/attach_block.twig',
             'name' => 'Путь до шаблона',
             'description' => 'Обязательно'
         ]
