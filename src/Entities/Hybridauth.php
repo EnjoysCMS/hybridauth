@@ -8,49 +8,33 @@ namespace EnjoysCMS\Module\Hybridauth\Entities;
 use Doctrine\ORM\Mapping as ORM;
 use EnjoysCMS\Core\Users\Entity\User;
 
-/**
- * @ORM\Entity
- * @ORM\Table(name="hybridauth")
- */
+#[ORM\Entity]
+#[ORM\Table(name: 'hybridauth')]
 class Hybridauth
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
-     * @ORM\Column(type="integer")
-     */
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
+    #[ORM\Column(type: 'integer')]
     private int $id;
 
-    /**
-     * @ORM\Column(type="string", length=255)
-     */
+    #[ORM\Column(type: 'string', length: 255)]
     private string $identifier;
 
-    /**
-     * @ORM\Column(type="string", length=255)
-     */
+    #[ORM\Column(type: 'string', length: 255)]
     private string $provider;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $avatar = null;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
+    #[ORM\Column(type: 'string',length: 255, nullable: true)]
     private ?string $displayName = null;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
+    #[ORM\Column(type: 'string',length: 255, nullable: true)]
     private ?string $profileUrl = null;
 
-
-    /**
-     * @ORM\ManyToOne(targetEntity="EnjoysCMS\Core\Entities\User")
-     * @ORM\JoinColumn(onDelete="CASCADE")
-     */
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinColumn(onDelete: 'CASCADE')]
     private User $user;
 
     public function getIdentifier(): string
