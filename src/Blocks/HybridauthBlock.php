@@ -28,14 +28,12 @@ use Twig\Error\SyntaxError;
 )]
 final class HybridauthBlock extends AbstractBlock
 {
-    private string $templatePath;
 
     public function __construct(
         private readonly Environment $twig,
         private readonly HybridauthApp $hybridauthApp,
         private readonly ServerRequestInterface $request
     ) {
-        $this->templatePath = $this->getBlockOptions()->getValue('template');
     }
 
     /**
@@ -55,7 +53,7 @@ final class HybridauthBlock extends AbstractBlock
         };
 
         return $this->twig->render(
-            $this->templatePath,
+            $this->getBlockOptions()->getValue('template'),
             [
                 'blockOptions' => $this->getBlockOptions(),
                 'hybridauth' => $this->hybridauthApp->getHybridauth(),

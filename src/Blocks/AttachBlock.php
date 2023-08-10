@@ -33,8 +33,6 @@ use Twig\Error\SyntaxError;
 )]
 final class AttachBlock extends AbstractBlock
 {
-    private string $templatePath;
-
 
     public function __construct(
         private readonly Environment $twig,
@@ -43,7 +41,6 @@ final class AttachBlock extends AbstractBlock
         private readonly ServerRequestInterface $request,
         private readonly HybridauthApp $hybridauthApp,
     ) {
-        $this->templatePath = $this->getBlockOptions()->getValue('template');
     }
 
 
@@ -75,7 +72,7 @@ final class AttachBlock extends AbstractBlock
         };
 
         return $this->twig->render(
-            $this->templatePath,
+            $this->getBlockOptions()->getValue('template'),
             [
                 'blockOptions' => $this->getBlockOptions(),
                 'attachedProviders' => $attachedProviders,
