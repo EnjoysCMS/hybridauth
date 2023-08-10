@@ -111,7 +111,7 @@ final class Controller
     #[Route(name: 'authenticate')]
     public function authenticate(UrlGeneratorInterface $urlGenerator)
     {
-        $provider = $this->request->getQueryParams()['provider'];
+        $provider = $this->request->getQueryParams()['provider'] ?? '';
         $redirectUrl = $this->request->getQueryParams()['redirect'] ?? $urlGenerator->generate(
             'system/index',
             referenceType: UrlGeneratorInterface::ABSOLUTE_URL
