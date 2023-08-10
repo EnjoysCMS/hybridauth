@@ -6,7 +6,7 @@ declare(strict_types=1);
 namespace EnjoysCMS\Module\Hybridauth\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
-use EnjoysCMS\Core\Entities\User;
+use EnjoysCMS\Core\Users\Entity\User;
 
 /**
  * @ORM\Entity

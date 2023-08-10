@@ -19,12 +19,14 @@ use EnjoysCMS\Core\Routing\Annotation\Route;
 use EnjoysCMS\Module\Hybridauth\Data;
 use EnjoysCMS\Module\Hybridauth\Entities\Hybridauth;
 use EnjoysCMS\Module\Hybridauth\HybridauthApp;
+use Exception;
 use HttpSoft\Message\Uri;
 use Hybridauth\Adapter\AdapterInterface;
 use Hybridauth\Exception\InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Throwable;
 
 #[Route('oauth', 'hybridauth_', needAuthorized: false)]
 final class Controller
@@ -78,7 +80,7 @@ final class Controller
             ]);
 
             return $this->hybridauthApp->$method($data);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $redirectUrl ??= 'system/index';
 
             if ($redirectUrl === 'system/index') {
@@ -138,7 +140,7 @@ final class Controller
             ]);
 
             return $this->hybridauthApp->getHybridauth()->authenticate($provider);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $url = new Uri(urldecode($redirectUrl));
             $url = $url->withQuery(
                 sprintf(
@@ -157,6 +159,7 @@ final class Controller
      * @throws NotSupported
      * @throws ORMException
      * @throws OptimisticLockException
+     * @throws Exception
      */
     #[Route(
         path: '/detach',

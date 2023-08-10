@@ -7,14 +7,15 @@ namespace EnjoysCMS\Module\Hybridauth;
 
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Enjoys\Cookie\Exception;
-use EnjoysCMS\Core\Components\Auth\Authorize;
-use EnjoysCMS\Core\Components\Auth\Identity;
-use EnjoysCMS\Core\Components\Helpers\Redirect;
-use EnjoysCMS\Core\Entities\Group;
-use EnjoysCMS\Core\Entities\User;
+use EnjoysCMS\Core\Auth\Authentication;
+use EnjoysCMS\Core\Auth\Identity;
+use EnjoysCMS\Core\Http\Response\RedirectInterface;
+use EnjoysCMS\Core\Users\Entity\Group;
+use EnjoysCMS\Core\Users\Entity\User;
 use Hybridauth\Exception\InvalidArgumentException;
 use Hybridauth\Hybridauth;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -37,12 +38,12 @@ final class HybridauthApp
      */
     public function __construct(
         Config $config,
-        private UrlGeneratorInterface $urlGenerator,
-        private Authorize $authorize,
-        private EntityManager $em,
-        private Identity $identity
+        private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly EntityManager $em,
+        private readonly Identity $identity,
+        private readonly RedirectInterface $redirect
     ) {
-        $this->config = $config->getModuleConfig()->asArray();
+        $this->config = $config->all();
 
         $this->config['callback'] = $this->urlGenerator->generate(
             'hybridauth/callback',
@@ -66,7 +67,7 @@ final class HybridauthApp
      * @throws \Doctrine\ORM\ORMException
      * @throws \Throwable
      */
-    public function auth(Data $data): void
+    public function auth(Data $data)
     {
         try {
             $user = $this->getUser($data);
@@ -78,18 +79,18 @@ final class HybridauthApp
                 $user = $this->registerUser($data);
             }
 
-            $this->authorize->setAuthorized($user, [
+            $this->identity->setVerified($user, [
                 'authenticate' => 'hybridauth'
             ]);
 
-            Redirect::http(urldecode($data->getRedirectUrl()));
+            return $this->redirect->toUrl(urldecode($data->getRedirectUrl()));
         } catch (\Throwable $e) {
-            $this->authorize->logout();
+            $this->identity->getAuthenticationStorage()->logout();
             throw $e;
         }
     }
 
-    public function attach(Data $data): void
+    public function attach(Data $data)
     {
         try {
             /** @var Entities\Hybridauth|null $hybridauthData */
@@ -118,12 +119,15 @@ final class HybridauthApp
             $this->em->persist($hybridauthData);
             $this->em->flush();
 
-            Redirect::http(urldecode($data->getRedirectUrl()));
+            return $this->redirect->toUrl(urldecode($data->getRedirectUrl()));
         } catch (\Throwable $e) {
             throw $e;
         }
     }
 
+    /**
+     * @throws NotSupported
+     */
     private function getUser(Data $data): ?User
     {
         /** @var Entities\Hybridauth|null $hybridauthData */
