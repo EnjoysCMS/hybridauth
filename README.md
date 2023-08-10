@@ -25,4 +25,21 @@ enjoyscms/hybridauth:
 ```
 
 ### Callback endpoint 
-`https://project.example/oauth/callback`
+`https://your-domain/oauth/callback`
+
+Route name: `hybridauth_callback`
+
+Twig: `{{ path('hybridauth_authenticate', {'provider': provider, 'redirect': currentUrl|url_encode }) }}`
+
+### Sqlite Foreign key problems
+
+Foreign key checks are disabled by default on pdo_sqlite driver. As it's mentioned here:
+
+> Foreign key constraints are disabled by default (for backwards compatibility), so must be enabled separately for each database connection. (Note, however, that future releases of SQLite might change so that foreign key constraints enabled by default. Careful developers will not make any assumptions about whether or not foreign keys are enabled by default but will instead enable or disable them as necessary.
+
+You should enable it before flushing via an EeventSubscriber:
+
+```php
+$evm = new EventManager();
+$evm->addEventSubscriber($container->get(\EnjoysCMS\Module\Hybridauth\Doctrine\Subscribers\SqlitePreFlushSubscriber::class));
+```
