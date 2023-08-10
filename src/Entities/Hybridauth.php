@@ -33,7 +33,7 @@ class Hybridauth
     #[ORM\Column(type: 'string',length: 255, nullable: true)]
     private ?string $profileUrl = null;
 
-    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(onDelete: 'CASCADE')]
     private User $user;
 
