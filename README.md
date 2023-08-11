@@ -41,5 +41,5 @@ You should enable it before flushing via an EeventSubscriber:
 
 ```php
 $evm = new EventManager();
-$evm->addEventSubscriber($container->get(\EnjoysCMS\Module\Hybridauth\Doctrine\Subscribers\SqlitePreFlushSubscriber::class));
+$evm->addEventSubscriber(new \EnjoysCMS\Core\Extensions\Doctrine\Subscribers\SqlitePreFlushSubscriber());
 ```
