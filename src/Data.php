@@ -22,7 +22,7 @@ final class Data
      * @param array{
      *     'provider': string,
      *     'redirectUrl': string|null,
-     *     'identifier': string,
+     *     'identifier': string|int,
      *     'token': array,
      *     'userProfile': Profile,
      * } $data
