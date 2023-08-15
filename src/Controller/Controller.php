@@ -6,15 +6,16 @@ declare(strict_types=1);
 namespace EnjoysCMS\Module\Hybridauth\Controller;
 
 
+use DI\Container;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Enjoys\Session\Session;
+use EnjoysCMS\Core\AbstractController;
 use EnjoysCMS\Core\Auth\Identity;
 use EnjoysCMS\Core\Exception\ForbiddenException;
 use EnjoysCMS\Core\Exception\NotFoundException;
-use EnjoysCMS\Core\Http\Response\RedirectInterface;
 use EnjoysCMS\Core\Routing\Annotation\Route;
 use EnjoysCMS\Module\Hybridauth\Data;
 use EnjoysCMS\Module\Hybridauth\Entities\Hybridauth;
@@ -24,19 +25,18 @@ use HttpSoft\Message\Uri;
 use Hybridauth\Adapter\AdapterInterface;
 use Hybridauth\Exception\InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Throwable;
 
 #[Route('oauth', 'hybridauth_', needAuthorized: false)]
-final class Controller
+final class Controller extends AbstractController
 {
+
     public function __construct(
-        private readonly HybridauthApp $hybridauthApp,
-        private readonly ServerRequestInterface $request,
-        private readonly Session $session,
-        private readonly RedirectInterface $redirect
+        Container $container,
+        private readonly HybridauthApp $hybridauthApp
     ) {
+        parent::__construct($container);
         $this->hybridauthApp->getHybridauth()->disconnectAllAdapters();
     }
 
@@ -47,10 +47,10 @@ final class Controller
         path: '/callback',
         name: 'callback'
     )]
-    public function callback()
+    public function callback(Session $session)
     {
         try {
-            $storage = $this->session->get('hybridauth', []);
+            $storage = $session->get('hybridauth', []);
             $redirectUrl = ($storage['redirect'] ?? null);
             $provider = ($storage['provider'] ?? null);
             $method = ($storage['method'] ?? 'auth');
@@ -99,17 +99,18 @@ final class Controller
 
             return $this->redirect->toUrl($url->__toString());
         } finally {
-            $this->session->delete('hybridauth');
+            $session->delete('hybridauth');
         }
     }
 
 
     /**
+     * @param Session $session
      * @param UrlGeneratorInterface $urlGenerator
      * @return AdapterInterface|ResponseInterface|void
      */
     #[Route(name: 'authenticate')]
-    public function authenticate(UrlGeneratorInterface $urlGenerator)
+    public function authenticate(Session $session, UrlGeneratorInterface $urlGenerator)
     {
         $provider = $this->request->getQueryParams()['provider'] ?? '';
         $redirectUrl = $this->request->getQueryParams()['redirect'] ?? $urlGenerator->generate(
@@ -127,11 +128,11 @@ final class Controller
             }
 
             if (!in_array($provider, $this->hybridauthApp->getHybridauth()->getProviders(), true)) {
-                $this->session->delete('hybridauth');
+                $session->delete('hybridauth');
                 throw new InvalidArgumentException(sprintf('[Error] The provider `%s` - not supported', $provider));
             }
 
-            $this->session->set([
+            $session->set([
                 'hybridauth' => [
                     'provider' => $provider,
                     'method' => $this->request->getQueryParams()['method'] ?? 'auth',
